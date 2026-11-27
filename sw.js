@@ -1,5 +1,5 @@
 ﻿/* 减脂打卡 · Service Worker：外壳离线可用 */
-const VERSION = 'fit-v4';
+const VERSION = 'fit-v5';
 const SHELL = [
   './', './index.html', './manifest.webmanifest',
   './icon-192.png', './icon-512.png', './icon-180.png', './icon-32.png',
