@@ -1,0 +1,651 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1" />
+<meta name="theme-color" content="#0b0f14" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-title" content="减脂打卡" />
+<title>减脂打卡 · 碳水渐降计划</title>
+<link rel="manifest" href="manifest.webmanifest" />
+<link rel="apple-touch-icon" href="icon-180.png" />
+<link rel="icon" href="icon-192.png" />
+<style>
+  :root{
+    --ink:#0b0f14; --fg:#eef2f7; --dim:#8695a6; --line:rgba(255,255,255,.08);
+    --green:#3ddc97; --blue:#5aa9ff; --gold:#e8b33d; --red:#ff6b6b;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;min-height:100%}
+  body{
+    background:
+      radial-gradient(120% 55% at 50% -12%, rgba(61,220,151,.20), transparent 62%),
+      radial-gradient(80% 42% at 92% 108%, rgba(90,169,255,.12), transparent 60%),
+      var(--ink);
+    color:var(--fg);
+    font:15px/1.55 -apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",system-ui,sans-serif;
+    padding:calc(env(safe-area-inset-top) + 16px) 14px calc(env(safe-area-inset-bottom) + 28px);
+  }
+  .wrap{max-width:540px;margin:0 auto}
+  header{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+  .badge{width:40px;height:40px;border-radius:12px;flex:0 0 auto;object-fit:cover;box-shadow:0 6px 18px rgba(61,220,151,.25)}
+  h1{font-size:17px;margin:0;font-weight:800;letter-spacing:.3px}
+  .sub{font-size:12px;color:var(--dim);margin-top:2px}
+  .tabs{display:flex;gap:8px;margin-bottom:14px}
+  .tab{flex:1;text-align:center;padding:10px;border-radius:12px;border:1px solid var(--line);
+    background:rgba(255,255,255,.03);color:var(--dim);font-size:13.5px;font-weight:650;cursor:pointer}
+  .tab.on{background:linear-gradient(160deg,rgba(61,220,151,.22),rgba(61,220,151,.06));border-color:rgba(61,220,151,.5);color:#b6f7d9}
+  .card{background:linear-gradient(180deg,rgba(255,255,255,.055),rgba(255,255,255,.02));
+    border:1px solid var(--line);border-radius:18px;padding:16px;margin-bottom:12px}
+  .label{font-size:10.5px;letter-spacing:.16em;color:var(--dim);text-transform:uppercase;margin-bottom:10px}
+  .big{display:flex;align-items:flex-end;gap:8px}
+  .big .n{font-size:44px;font-weight:800;line-height:1;font-variant-numeric:tabular-nums;
+    background:linear-gradient(180deg,#fff,#a8f0d0);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .big .u{font-size:15px;color:var(--dim);margin-bottom:6px}
+  .delta{font-size:13px;margin-top:8px;display:flex;gap:14px;flex-wrap:wrap}
+  .delta b{font-variant-numeric:tabular-nums}
+  .down{color:var(--green)}.up{color:var(--red)}.flat{color:var(--dim)}
+  /* 输入 */
+  .form{display:grid;grid-template-columns:1fr 1fr auto;gap:8px;margin-top:14px}
+  .form input{width:100%;padding:11px 12px;border-radius:12px;border:1px solid var(--line);
+    background:rgba(255,255,255,.05);color:var(--fg);font:inherit;font-size:15px;outline:none}
+  .form input:focus{border-color:rgba(61,220,151,.55)}
+  .form button{padding:0 16px;border-radius:12px;border:0;background:var(--green);color:#04231a;
+    font:inherit;font-weight:800;font-size:14px}
+  .form button:active{opacity:.85}
+  .quick{display:flex;gap:6px;margin-top:8px}
+  .quick button{flex:1;padding:8px;border-radius:10px;border:1px solid var(--line);
+    background:rgba(255,255,255,.03);color:var(--dim);font:inherit;font-size:12.5px}
+  /* 图表 */
+  .chart{width:100%;height:auto;display:block;margin-top:6px}
+  .legend{display:flex;gap:14px;font-size:11px;color:var(--dim);margin-top:8px;flex-wrap:wrap}
+  .legend i{display:inline-block;width:14px;height:3px;border-radius:2px;vertical-align:2px;margin-right:4px}
+  /* 进度条 */
+  .bar{height:8px;border-radius:99px;background:rgba(255,255,255,.08);overflow:hidden;margin-top:10px}
+  .bar > div{height:100%;border-radius:99px;background:linear-gradient(90deg,var(--green),#7ef0c0);transition:width .4s}
+  .hormeta{display:flex;justify-content:space-between;font-size:11.5px;color:var(--dim);margin-top:6px}
+  /* 列表 */
+  .row{display:grid;grid-template-columns:52px 1fr auto auto;gap:8px;align-items:center;
+    padding:9px 0;border-bottom:1px solid rgba(255,255,255,.055);font-size:13px}
+  .row:last-child{border-bottom:0}
+  .row .d{color:var(--dim);font-size:11.5px;font-variant-numeric:tabular-nums}
+  .row .w{font-weight:750;font-variant-numeric:tabular-nums}
+  .row .c{font-size:11px;font-variant-numeric:tabular-nums}
+  .row .x{border:0;background:transparent;color:#5b6675;font-size:16px;padding:2px 6px;cursor:pointer}
+  /* 计划表 */
+  .plan-row{display:grid;grid-template-columns:26px 60px 44px 50px 1fr;gap:6px;align-items:center;
+    padding:8px 6px;border-radius:9px;font-size:12px}
+  .plan-row.head{color:var(--dim);font-size:10px;letter-spacing:.06em;padding-bottom:4px;border-bottom:1px solid rgba(255,255,255,.08);border-radius:0}
+  .plan-row.cur{background:rgba(61,220,151,.13);border:1px solid rgba(61,220,151,.35)}
+  .plan-row .k{color:var(--dim);font-variant-numeric:tabular-nums;text-align:center;font-size:11px}
+  .plan-row .n{font-weight:700}
+  .plan-row .c{text-align:center;font-variant-numeric:tabular-nums;color:#cfd8e3}
+  .plan-row .t{text-align:right;font-variant-numeric:tabular-nums;color:var(--dim)}
+  .plan-row.cur .t{color:#b6f7d9}
+  .empty{color:var(--dim);font-size:13px;text-align:center;padding:22px 0}
+  .note{font-size:11.5px;color:var(--dim);background:rgba(255,255,255,.04);border:1px dashed var(--line);
+    border-radius:12px;padding:10px 12px;line-height:1.65;margin-top:10px}
+  .chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:4px}
+  .chip{font-size:11px;padding:4px 9px;border-radius:999px;border:1px solid var(--line);color:var(--dim)}
+  .chip.on{border-color:rgba(61,220,151,.45);color:#b6f7d9;background:rgba(61,220,151,.1)}
+  footer{color:var(--dim);font-size:11px;text-align:center;margin-top:18px;line-height:1.8}
+  .hidden{display:none!important}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <img class="badge" src="icon-192.png" alt="" width="40" height="40" />
+    <div>
+      <h1>减脂打卡</h1>
+      <div class="sub" id="sub">碳水渐降 · 12 周 <span id="streakTop"></span></div>
+    </div>
+  </header>
+
+  <div class="tabs">
+    <div class="tab on" data-tab="log">打卡</div>
+    <div class="tab" data-tab="plan">周计划</div>
+    <div class="tab" data-tab="data">数据</div>
+  </div>
+
+  <div id="view"></div>
+
+  <footer>
+    数据只存在这台设备的浏览器里 · 换设备请用「导出备份」<br>
+    计划基于 171cm / 82kg / 26 岁男性 · 蛋白 150g 固定
+  </footer>
+</div>
+
+<script>
+/* ══════════ 计划配置（按你的规则） ══════════
+   · 11/28 是第 1 周第 1 天
+   · 起点 82kg，每周目标 = 上周 × 0.99（每周降 1%）
+   · 初始：碳水 220g / 蛋白 150g / 脂肪 50g
+   · 每周最后一天称重：达标 → 碳水不变；未达标 → 碳水 −30g（下限 100g） */
+const CFG = {
+  startDate: '2026-11-28',
+  startWeight: 82.0,
+  carbStart: 220,
+  carbStep: 30,
+  carbFloor: 100,
+  protein: 150,
+  fat: 50,
+  rate: 0.01,
+  weeks: 12,
+}
+const HEIGHT = 171
+const KCAL = { c: 4, p: 4, f: 9 }
+
+const weekTarget = (n) => CFG.startWeight * Math.pow(1 - CFG.rate, n)   // 第 n 周周末目标体重
+const kcalOf = (carbs) => Math.round(carbs * KCAL.c + CFG.protein * KCAL.p + CFG.fat * KCAL.f)
+const GOAL_W = +weekTarget(CFG.weeks).toFixed(1)
+
+/* ══════════ 存储 ══════════ */
+const KEY = 'fit:log:v2'
+let DATA = { start: null, w: {} }
+
+function load() {
+  try {
+    const raw = JSON.parse(localStorage.getItem(KEY) || 'null')
+    if (raw && raw.w) DATA = raw
+  } catch { /* 忽略 */ }
+  if (!DATA.start) DATA.start = CFG.startDate
+  // 第一条记录早于计划开始日 → 以记录为准
+  const e = entries()
+  if (e.length && e[0][0] < DATA.start) DATA.start = e[0][0]
+}
+function save() { localStorage.setItem(KEY, JSON.stringify(DATA)) }
+
+/* ══════════ 工具 ══════════ */
+const pad = (n) => String(n).padStart(2, '0')
+function today() { const d = new Date(); return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}` }
+function parse(s) { const [y, m, d] = s.split('-').map(Number); return new Date(y, m - 1, d) }
+function diffDays(a, b) { return Math.round((parse(b) - parse(a)) / 86400000) }
+function fmt(s) { const d = parse(s); return `${d.getMonth() + 1}/${d.getDate()}` }
+function entries() { return Object.entries(DATA.w).sort((a, b) => a[0].localeCompare(b[0])) }
+function latest() { const e = entries(); return e.length ? { date: e[e.length - 1][0], kg: e[e.length - 1][1] } : null }
+function startKg() { const e = entries(); return e.length ? e[0][1] : CFG.startWeight }
+
+/* ── 周次的划分与判定 ── */
+function weekOf(dateStr) {                        // 第几周（0 = 还没开始）
+  const d = diffDays(CFG.startDate, dateStr)
+  if (d < 0) return 0
+  return Math.min(CFG.weeks, Math.floor(d / 7) + 1)
+}
+function weekStart(n) {
+  const d = new Date(parse(CFG.startDate)); d.setDate(d.getDate() + (n - 1) * 7)
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
+}
+function weekEnd(n) {
+  const d = new Date(parse(CFG.startDate)); d.setDate(d.getDate() + n * 7 - 1)
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
+}
+function weekOver(n) { return diffDays(weekEnd(n), today()) >= 0 }   // 这一周是否已结束
+
+/** 第 n 周的判定体重：周末当天 > 该周最后一条 > 无 */
+function weekWeight(n) {
+  const s = weekStart(n), e = weekEnd(n)
+  const inWeek = entries().filter(([d]) => d >= s && d <= e)
+  if (!inWeek.length) return { kg: null, date: null, how: '无记录' }
+  const exact = inWeek.find(([d]) => d === e)
+  if (exact) return { kg: exact[1], date: exact[0], how: '周末当天' }
+  const last = inWeek[inWeek.length - 1]
+  return { kg: last[1], date: last[0], how: '本周最后一条' }
+}
+/** 第 n 周该吃多少碳水：从 220 开始，之前每个「未达标」的周各扣 30 */
+function carbsForWeek(n) {
+  let c = CFG.carbStart
+  for (let w = 1; w < n; w++) {
+    const { kg } = weekWeight(w)
+    if (kg == null) continue
+    if (kg > weekTarget(w) + 0.0001) c = Math.max(CFG.carbFloor, c - CFG.carbStep)
+  }
+  return c
+}
+/** 第 n 周的判定结果 */
+function judge(n) {
+  const { kg, date, how } = weekWeight(n)
+  const tgt = weekTarget(n)
+  if (!weekOver(n)) return { state: 'now', kg, date, how, tgt }
+  if (kg == null) return { state: 'skip', kg, date, how, tgt }
+  return { state: kg <= tgt + 0.0001 ? 'pass' : 'fail', kg, date, how, tgt }
+}
+
+function currentWeek() {
+  const w = weekOf(today())
+  return w < 1 ? 1 : w
+}
+function streak() {
+  let n = 0
+  const d = new Date()
+  // 今天没打卡时，从昨天开始算
+  if (!DATA.w[today()]) d.setDate(d.getDate() - 1)
+  for (;;) {
+    const key = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
+    if (DATA.w[key] != null) { n++; d.setDate(d.getDate() - 1) } else break
+    if (n > 400) break
+  }
+  return n
+}
+function thisWeekCount() {
+  const now = new Date()
+  const dow = (now.getDay() + 6) % 7 // 周一=0
+  let c = 0
+  for (let i = 0; i <= dow; i++) {
+    const d = new Date(now); d.setDate(d.getDate() - (dow - i))
+    const key = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
+    if (DATA.w[key] != null) c++
+  }
+  return c
+}
+// 7 日移动平均
+function ma7() {
+  const es = entries()
+  const out = []
+  for (const [d, kg] of es) {
+    const ref = parse(d)
+    const win = es.filter(([d2]) => {
+      const diff = Math.round((ref - parse(d2)) / 86400000)
+      return diff >= 0 && diff < 7
+    })
+    out.push([d, win.reduce((s, [, v]) => s + v, 0) / win.length])
+  }
+  return out
+}
+function targetAt(dateStr) {
+  const day = diffDays(CFG.startDate, dateStr)
+  if (day < 0) return CFG.startWeight
+  return CFG.startWeight * Math.pow(1 - CFG.rate, day / 7)
+}
+
+/* ══════════ 图表 ══════════ */
+function chart() {
+  const es = entries()
+  if (!es.length) return '<div class="empty">还没有记录，先填今天的体重</div>'
+  const W = 360, H = 190, PL = 30, PR = 10, PT = 14, PB = 22
+  const d0 = DATA.start
+  const d1 = today()
+  const days = Math.max(13, diffDays(d0, d1))
+  const xs = (dateStr) => PL + (Math.max(0, Math.min(days, diffDays(d0, dateStr))) / days) * (W - PL - PR)
+
+  const vals = es.map(([, v]) => v)
+  // y 轴范围：只取「实际数据 + 窗口内的目标线」，别把 12 周目标全算进来
+  const targets = []
+  for (let i = 0; i <= days; i++) {
+    const d = new Date(parse(d0)); d.setDate(d.getDate() + i)
+    targets.push(targetAt(`${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`))
+  }
+  let min = Math.min(...vals, ...targets)
+  let max = Math.max(...vals, ...targets)
+  const span = Math.max(1.2, max - min)
+  min = Math.floor((min - span * 0.12) * 2) / 2
+  max = Math.ceil((max + span * 0.12) * 2) / 2
+  const ys = (v) => PT + (1 - (v - min) / (max - min || 1)) * (H - PT - PB)
+
+  // 目标线
+  let tpath = ''
+  for (let i = 0; i <= days; i++) {
+    const d = new Date(parse(d0)); d.setDate(d.getDate() + i)
+    const key = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
+    tpath += `${i ? 'L' : 'M'}${xs(key).toFixed(1)},${ys(targets[i]).toFixed(1)}`
+  }
+
+  // 实际点 + 折线
+  const pts = es.map(([d, v]) => [xs(d), ys(v)])
+  const poly = pts.map((p, i) => `${i ? 'L' : 'M'}${p[0].toFixed(1)},${p[1].toFixed(1)}`).join('')
+
+  // 7 日均线
+  const maPts = ma7().map(([d, v]) => [xs(d), ys(v)])
+  const maPoly = maPts.map((p, i) => `${i ? 'L' : 'M'}${p[0].toFixed(1)},${p[1].toFixed(1)}`).join('')
+
+  // y 轴刻度（3 条）
+  let grid = ''
+  for (let i = 0; i <= 2; i++) {
+    const v = min + (max - min) * (i / 2)
+    const y = ys(v)
+    grid += `<line x1="${PL}" y1="${y.toFixed(1)}" x2="${W - PR}" y2="${y.toFixed(1)}" stroke="rgba(255,255,255,.06)" stroke-width="1"/>`
+    grid += `<text x="${PL - 6}" y="${(y + 3).toFixed(1)}" text-anchor="end" font-size="8" fill="#8695a6">${v.toFixed(1)}</text>`
+  }
+  const dots = pts.map((p) => `<circle cx="${p[0].toFixed(1)}" cy="${p[1].toFixed(1)}" r="2.6" fill="#3ddc97" opacity=".9"/>`).join('')
+
+  // x 轴：首尾
+  const xlab = `<text x="${PL}" y="${H - 6}" font-size="8" fill="#8695a6">${fmt(d0)}</text>`
+    + `<text x="${W - PR}" y="${H - 6}" font-size="8" fill="#8695a6" text-anchor="end">${fmt(d1)}</text>`
+
+  return `<svg class="chart" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">
+    ${grid}
+    <path d="${tpath}" fill="none" stroke="#e8b33d" stroke-width="1.4" stroke-dasharray="4 3" opacity=".7"/>
+    <path d="${poly}" fill="none" stroke="#3ddc97" stroke-width="1.2" opacity=".45"/>
+    <path d="${maPoly}" fill="none" stroke="#3ddc97" stroke-width="2.2" stroke-linejoin="round"/>
+    ${dots}${xlab}
+  </svg>`
+}
+
+/* ══════════ 页面：打卡 ══════════ */
+function viewLog() {
+  const last = latest()
+  const cur = last ? last.kg : CFG.startWeight
+  const start = startKg()
+  const lost = +(start - cur).toFixed(1)
+  const bmi = cur / Math.pow(HEIGHT / 100, 2)
+  const wkd = weekOf(today())                 // 0 = 计划还没开始
+  const shown = wkd < 1 ? 1 : wkd
+  const carbs = carbsForWeek(shown)
+  const kcal = kcalOf(carbs)
+  const tgt = weekTarget(shown)
+  const notStarted = wkd === 0
+  const daysToStart = -diffDays(today(), CFG.startDate)
+  const prog = Math.max(0, Math.min(100, ((start - cur) / (start - GOAL_W)) * 100))
+  const st = streak()
+  const tw = thisWeekCount()
+
+  const deltaCls = lost > 0.05 ? 'down' : lost < -0.05 ? 'up' : 'flat'
+  const deltaTxt = lost > 0 ? `较开始 −${lost} kg` : lost < 0 ? `较开始 +${Math.abs(lost)} kg` : '与开始持平'
+
+  return `
+  <div class="card">
+    <div class="label">当前体重</div>
+    <div class="big"><span class="n">${cur.toFixed(1)}</span><span class="u">kg</span></div>
+    <div class="delta">
+      <span class="${deltaCls}"><b>${deltaTxt}</b></span>
+      <span>距目标 <b>${(cur - GOAL_W).toFixed(1)}</b> kg</span>
+      <span>BMI <b>${bmi.toFixed(1)}</b></span>
+    </div>
+    <div class="bar"><div style="width:${prog.toFixed(1)}%"></div></div>
+    <div class="hormeta"><span>${start.toFixed(1)} kg</span><span>${prog.toFixed(0)}%</span><span>${GOAL_W.toFixed(1)} kg</span></div>
+
+    <div class="form">
+      <input type="date" id="d" value="${today()}" max="${today()}" />
+      <input type="number" id="kg" inputmode="decimal" step="0.1" placeholder="体重 kg" value="${cur.toFixed(1)}" />
+      <button id="save">记录</button>
+    </div>
+    <div class="quick">
+      <button data-add="-0.5">−0.5</button>
+      <button data-add="-0.1">−0.1</button>
+      <button data-add="0.1">+0.1</button>
+      <button data-add="0.5">+0.5</button>
+    </div>
+
+    <div class="chips" style="margin-top:12px">
+      <span class="chip ${st >= 1 ? 'on' : ''}">连续打卡 ${st} 天</span>
+      <span class="chip ${tw >= 5 ? 'on' : ''}">本周 ${tw}/7</span>
+      ${notStarted
+        ? `<span class="chip on">计划 ${fmt(CFG.startDate)} 开始 · 还有 ${daysToStart} 天 · 起手碳水 ${CFG.carbStart}g</span>`
+        : `<span class="chip on">第 ${wkd} 周 · 碳水 ${carbs}g · ${kcal} kcal</span>`}
+    </div>
+    ${notStarted ? '' : `<div class="note" style="margin-top:10px">本周目标体重 <b>${tgt.toFixed(1)} kg</b>，
+      你现在 ${cur.toFixed(1)} kg —— ${Math.abs(tgt - cur) < 0.3 ? '基本达标 👍' : tgt < cur ? `还差 ${(cur - tgt).toFixed(1)} kg` : `已经比目标轻 ${(tgt - cur).toFixed(1)} kg`}</div>`}
+  </div>
+
+  <div class="card">
+    <div class="label">体重曲线 · 近 ${Math.max(14, diffDays(DATA.start, today()))} 天</div>
+    ${chart()}
+    <div class="legend">
+      <span><i style="background:#3ddc97"></i>7 日均线（看趋势）</span>
+      <span><i style="background:#e8b33d"></i>计划目标线</span>
+    </div>
+    <div class="note">体重每天会波动 0.3–1kg（水分、盐分、排便），<b>只看绿线（7 日均线）</b>，别被单日数字影响心情。</div>
+  </div>
+
+  <div class="card">
+    <div class="label">最近记录</div>
+    ${recordsHtml(7)}
+  </div>`
+}
+
+function recordsHtml(n) {
+  const es = entries().slice().reverse().slice(0, n)
+  if (!es.length) return '<div class="empty">还没有记录</div>'
+  return es.map(([d, kg], i) => {
+    const prev = entries().filter(([dd]) => dd < d).slice(-1)[0]
+    let c = ''
+    if (prev) {
+      const diff = +(kg - prev[1]).toFixed(1)
+      if (diff !== 0) c = `<span class="c ${diff < 0 ? 'down' : 'up'}">${diff > 0 ? '+' : ''}${diff}</span>`
+      else c = '<span class="c flat">—</span>'
+    }
+    return `<div class="row">
+      <span class="d">${fmt(d)}</span>
+      <span class="w">${kg.toFixed(1)} kg</span>
+      ${c}
+      <button class="x" data-del="${d}" aria-label="删除">×</button>
+    </div>`
+  }).join('')
+}
+
+/* ══════════ 页面：周计划 ══════════ */
+function viewPlan() {
+  const wkd = weekOf(today())
+  const shown = wkd < 1 ? 1 : wkd
+  const carbs = carbsForWeek(shown)
+  const kcal = kcalOf(carbs)
+  const tgt = weekTarget(shown)
+  const notStarted = wkd === 0
+  const daysToStart = -diffDays(today(), CFG.startDate)
+  const last = latest()
+  const cur = last ? last.kg : CFG.startWeight
+  const ahead = +(tgt - cur).toFixed(1)
+  const prevCarbs = shown > 1 ? carbsForWeek(shown - 1) : carbs
+  const dropped = prevCarbs - carbs
+
+  const rows = []
+  for (let w = 1; w <= 12; w++) {
+    const j = judge(w)
+    const c = carbsForWeek(w)
+    const t = weekTarget(w)
+    let mark = '<span style="color:#4a5563">—</span>'
+    if (j.state === 'pass') mark = '<span style="color:#3ddc97">达标</span>'
+    else if (j.state === 'fail') mark = '<span style="color:#ff9b9b">未达标 −30g</span>'
+    else if (j.state === 'skip') mark = '<span style="color:#8695a6">无记录</span>'
+    else if (w === shown) mark = '<span style="color:#b6f7d9">进行中</span>'
+    rows.push(`<div class="plan-row ${w === shown && !notStarted ? 'cur' : ''}">
+      <span class="k">${w}</span>
+      <span class="n">${t.toFixed(1)}</span>
+      <span class="c">${c}g</span>
+      <span class="c">${kcalOf(c)}</span>
+      <span class="t">${mark}</span>
+    </div>`)
+  }
+
+  // 已完成周的判定明细
+  const done = []
+  for (let w = 1; w <= 12; w++) {
+    const j = judge(w)
+    if (j.state === 'now') break
+    if (j.state === 'skip') { done.push(`<div class="row"><span class="d">第${w}周</span><span class="w" style="color:#8695a6">无记录</span><span class="c flat">跳过</span><span></span></div>`); continue }
+    const diff = j.kg - j.tgt
+    done.push(`<div class="row">
+      <span class="d">第${w}周</span>
+      <span class="w">${j.kg.toFixed(1)}<span style="color:#8695a6;font-weight:400;font-size:11px"> / 目标 ${j.tgt.toFixed(1)}</span></span>
+      <span class="c ${diff > 0 ? 'up' : 'down'}">${diff > 0 ? '+' : ''}${diff.toFixed(1)}</span>
+      <span class="c ${j.state === 'pass' ? 'down' : 'up'}">${j.state === 'pass' ? '碳水不变' : '−30g'}</span>
+    </div>`)
+  }
+
+  return `
+  <div class="card">
+    <div class="label">${notStarted ? `计划 · ${fmt(CFG.startDate)} 开始（还有 ${daysToStart} 天）` : `本周 · 第 ${wkd} 周`}</div>
+    <div class="big"><span class="n">${carbs}</span><span class="u">g 碳水 / 天</span></div>
+    <div class="delta" style="margin-top:6px">
+      <span>蛋白 <b>${CFG.protein}g</b></span>
+      <span>脂肪 <b>${CFG.fat}g</b></span>
+      <span>热量 <b>${kcal}</b></span>
+    </div>
+    ${dropped > 0 ? `<div class="note" style="margin-top:12px;border-color:rgba(255,107,107,.35)">上周未达标 → 本周碳水已经<b>降到 ${carbs}g</b>（−${dropped}g）。</div>` : ''}
+    ${notStarted
+      ? `<div class="note" style="margin-top:12px">还没到开始日，现在可以先把体重记下来当基线。</div>`
+      : `<div class="note" style="margin-top:12px">本周目标体重 <b>${tgt.toFixed(1)} kg</b>，
+         你现在 ${cur.toFixed(1)} kg —— ${Math.abs(ahead) < 0.3 ? '基本达标 👍' : ahead < 0 ? `还差 ${Math.abs(ahead).toFixed(1)} kg` : `已经比目标轻 ${ahead.toFixed(1)} kg`}</div>`}
+  </div>
+
+  <div class="card">
+    <div class="label">判定规则（每周最后一天称重）</div>
+    <div class="note" style="margin-top:0;line-height:1.85">
+      ① 每周目标体重 = 上周目标 <b>× 0.99</b>（每周降 1%）<br>
+      ② 周末体重大于目标 → 下周碳水 <b>−30g</b><br>
+      ③ 周末体重达到或低于目标 → 下周碳水 <b>不变</b><br>
+      ④ 碳水下限 <b>${CFG.carbFloor}g</b>，到了就不再降<br>
+      ⑤ 周末那天没记录 → 用该周<b>最后一条</b>记录判定
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="label">12 周计划表</div>
+    <div class="plan-row head">
+      <span class="k">周</span><span>目标</span><span class="c">碳水</span><span class="c">热量</span><span class="t">状态</span>
+    </div>
+    ${rows.join('')}
+  </div>
+
+  ${done.length ? `<div class="card">
+    <div class="label">已完成的周 · 判定明细</div>
+    ${done.join('')}
+  </div>` : ''}
+
+  <div class="card">
+    <div class="label">固定不变的几条</div>
+    <div class="note" style="margin-top:0">
+      · 蛋白 <b>${CFG.protein}g 固定</b>，全程不动<br>
+      · 脂肪 <b>${CFG.fat}g</b>，不跟着碳水一起降<br>
+      · 碳水 <b>60–70% 放在训练前后</b><br>
+      · 碳水降的是<b>总量</b>，不是某一餐全砍
+    </div>
+  </div>`
+}
+
+/* ══════════ 页面：数据 ══════════ */
+function viewData() {
+  const es = entries()
+  if (!es.length) return '<div class="card"><div class="empty">还没有数据</div></div>'
+  const first = es[0], last = es[es.length - 1]
+  const total = +(first[1] - last[1]).toFixed(1)
+  const days = Math.max(1, diffDays(first[0], last[0]))
+  const perWeek = +((total / days) * 7).toFixed(2)
+  const lbs = (es.length)
+  const avg = +(es.reduce((s, [, v]) => s + v, 0) / es.length).toFixed(1)
+
+  // 最近 14 天速率 → 预计达成
+  const recent = es.filter(([d]) => diffDays(d, today()) <= 14)
+  let eta = '数据太少'
+  if (recent.length >= 3) {
+    const rl = recent[recent.length - 1], rf = recent[0]
+    const dd = Math.max(1, diffDays(rf[0], rl[0]))
+    const rate = (rf[1] - rl[1]) / dd // kg per day (正数=在减)
+    if (rate > 0.02) {
+      const need = (rl[1] - GOAL_W) / rate
+      const d = new Date(); d.setDate(d.getDate() + Math.round(need))
+      eta = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
+    } else if (rate > -0.02) eta = '最近基本没动，检查一下执行度'
+    else eta = '最近在涨，先看是不是水/盐分'
+  }
+
+  return `
+  <div class="card">
+    <div class="label">总览</div>
+    <div class="delta" style="flex-direction:column;gap:8px;font-size:13.5px">
+      <span>开始 <b>${first[1].toFixed(1)} kg</b>（${first[0]}）</span>
+      <span>现在 <b>${last[1].toFixed(1)} kg</b>（${last[0]}）</span>
+      <span>累计 <b class="${total > 0 ? 'down' : 'up'}">${total > 0 ? '−' : '+'}${Math.abs(total)} kg</b> · 平均 <b>${total > 0 ? '−' : '+'}${Math.abs(perWeek)} kg/周</b></span>
+      <span>打卡 <b>${lbs}</b> 次 · 平均体重 <b>${avg}</b> kg</span>
+      <span>按最近速度，预计达成目标：<b>${eta}</b></span>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="label">全部记录（${es.length}）</div>
+    ${recordsHtml(999)}
+  </div>
+
+  <div class="card">
+    <div class="label">备份</div>
+    <div class="quick" style="margin-top:0">
+      <button id="exp">导出备份</button>
+      <button id="imp">导入备份</button>
+      <button id="clr" style="color:#ff9a9c">清空</button>
+    </div>
+    <div class="note">数据只存在这台手机的浏览器里，换手机或清缓存会丢，建议每周导出一次。</div>
+    <input type="file" id="file" accept="application/json" class="hidden" />
+  </div>`
+}
+
+/* ══════════ 渲染与交互 ══════════ */
+const $ = (s) => document.querySelector(s)
+let tab = 'log'
+
+function render() {
+  if (tab === 'log') $('#view').innerHTML = viewLog()
+  else if (tab === 'plan') $('#view').innerHTML = viewPlan()
+  else $('#view').innerHTML = viewData()
+  bind()
+  const st = streak()
+  $('#streakTop').textContent = st ? `· 🔥 ${st} 天` : ''
+}
+
+function bind() {
+  const save = $('#save')
+  if (save) save.onclick = () => {
+    const d = $('#d').value || today()
+    const v = parseFloat($('#kg').value)
+    if (!v || v < 30 || v > 200) { alert('请填写合理的体重（kg）'); return }
+    DATA.w[d] = +v.toFixed(1)
+    if (!DATA.start || d < DATA.start) DATA.start = d
+    save2()
+    render()
+  }
+  document.querySelectorAll('[data-add]').forEach((b) => {
+    b.onclick = () => {
+      const input = $('#kg')
+      const v = (parseFloat(input.value) || 0) + parseFloat(b.dataset.add)
+      input.value = v.toFixed(1)
+    }
+  })
+  document.querySelectorAll('[data-del]').forEach((b) => {
+    b.onclick = () => {
+      const k = b.dataset.del
+      if (!confirm(`删除 ${k} 的记录？`)) return
+      delete DATA.w[k]
+      save2(); render()
+    }
+  })
+  const exp = $('#exp')
+  if (exp) exp.onclick = () => {
+    const blob = new Blob([JSON.stringify(DATA, null, 1)], { type: 'application/json' })
+    const a = document.createElement('a')
+    a.href = URL.createObjectURL(blob)
+    a.download = `减脂打卡-${today()}.json`
+    a.click()
+  }
+  const imp = $('#imp')
+  if (imp) imp.onclick = () => $('#file').click()
+  const file = $('#file')
+  if (file) file.onchange = async () => {
+    const f = file.files[0]; if (!f) return
+    try {
+      const j = JSON.parse(await f.text())
+      if (!j.w) throw new Error('格式不对')
+      DATA = j; save2(); render()
+      alert('导入成功')
+    } catch (e) { alert('导入失败：' + e.message) }
+  }
+  const clr = $('#clr')
+  if (clr) clr.onclick = () => {
+    if (!confirm('清空全部记录？这个操作不能撤销')) return
+    DATA = { start: today(), w: {} }
+    save2(); render()
+  }
+}
+function save2() { save() }
+
+document.querySelectorAll('.tab').forEach((el) => el.onclick = () => {
+  tab = el.dataset.tab
+  document.querySelectorAll('.tab').forEach((x) => x.classList.toggle('on', x === el))
+  render()
+})
+
+load()
+render()
+
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {})
+</script>
+</body>
+</html>
